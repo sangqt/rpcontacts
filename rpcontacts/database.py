@@ -1,7 +1,8 @@
 import pathlib
 import sqlite3
 
-DATABASE_PATH = pathlib.Path().home()
+DATABASE_PATH = pathlib.Path().home() / "contacts.db"
+BACKUP_DATABASE_PATH = pathlib.Path().home() / "backup.db"
 
 class Database:
     def __init__(self, db_path=DATABASE_PATH):
@@ -39,7 +40,7 @@ class Database:
         insert_con_query = "INSERT INTO contacts VALUES (NULL, ?, ?, ?);"
         self._run_query(insert_con_query, *contact,)
 
-    def delete_contact(self, contact):
+    def delete_contact(self, id):
         self._run_query(
             "DELETE FROM contacts WHERE id=(?);",
             id,

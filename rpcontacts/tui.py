@@ -67,11 +67,47 @@ class ContactsApp(App):
             if contact_data:
                 self.db.add_contact(contact_data)
                 id, *contact = self.db.get_last_contact()
-                self.query_one(Datatable).add_row(*contact, key=id)
+                self.query_one(DataTable).add_row(*contact, key=id)
         
         self.push_screen(InputDialog(), check_contact)
+    
+    @on(Button.Pressed, "#delete")
+    def action_delete(self):
+        contacts_list = self.query_one(DataTable)
+        row_key, _ = contacts_list.coordinate_to_cell_key(
+            contacts_list.cursor_coordinate
+        )
+
+        def check_answer(accepted):
+            if accepted and row_key:
+                self.db.delete_contact(id=row_key.value)
+                contacts_list.remove_row(row_key)
+        
+        name = contacts_list.get_row(row_key)[0]
+
+        self.push_screen(
+            QuestionDialog(f"Do you want to delete {name}'s contact?"),
+            check_answer,
+        )
+
+    @on(Button.Pressed, "#clear")
+    def action_clear_all(self):
+        def check_answer(accepted):
+            if accepted:
+                self.db.clear_all_contacts()
+                self.query_one(DataTable).clear()
+        
+        self.push_screen(
+            QuestionDialog("Are you sure you want to remove all contacts?"),
+            check_answer,
+        )
 
 class QuestionDialog(Screen):
+    BINDINGS = [
+        ("y", "agree", "Agree to process"),
+        ("n", "abort", "Abort action"),
+    ]
+
     def __init__(self, message, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.message = message
@@ -92,6 +128,12 @@ class QuestionDialog(Screen):
             self.dismiss(True)
         else:
             self.dismiss(False)
+
+    def action_agree(self):
+        self.dismiss(True)
+    
+    def action_abort(self):
+        self.dismiss(False)
 
 class InputDialog(Screen):
     def compose(self):
